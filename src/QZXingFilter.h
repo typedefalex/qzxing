@@ -75,12 +75,18 @@ class QZXingFilter : public QAbstractVideoFilter
         Q_PROPERTY(bool decoding READ isDecoding NOTIFY isDecodingChanged)
         Q_PROPERTY(QZXing* decoder READ getDecoder)
         Q_PROPERTY(QRectF captureRect MEMBER captureRect NOTIFY captureRectChanged)
+	Q_PROPERTY(bool active READ active WRITE setActive NOTIFY activeChanged)
+	Q_PROPERTY(QString imagePath READ imagePath WRITE setImagePath NOTIFY imagePathChanged)
 
     signals:
         void isDecodingChanged();
         void decodingFinished(bool succeeded, int decodeTime);
         void decodingStarted();
         void captureRectChanged();
+
+		void tagRecognized(const QString& tag, const QString& imagePath, const QString& foundedFormat, const QString& charSet);
+
+
 
     private slots:
         void handleDecodingStarted();
@@ -94,6 +100,9 @@ class QZXingFilter : public QAbstractVideoFilter
         SimpleVideoFrame frame;
         QFuture<void> processThread;
 
+		QString imagePath_;
+		bool active_;
+
     public:  /// Methods
         explicit QZXingFilter(QObject *parent = 0);
         virtual ~QZXingFilter();
@@ -102,6 +111,16 @@ class QZXingFilter : public QAbstractVideoFilter
         QZXing* getDecoder() { return &decoder; }
 
         QVideoFilterRunnable * createFilterRunnable();
+
+		bool active() const;
+		void setActive(bool active);
+
+		QString imagePath() const;
+		void setImagePath(QString imagePath);
+
+signals:
+		void imagePathChanged(QString imagePath);
+		void activeChanged(bool active);
 };
 
 /// A new Runnable is created everytime the filter gets a new frame
@@ -109,18 +128,21 @@ class QZXingFilterRunnable : public QObject, public QVideoFilterRunnable
 {
     Q_OBJECT
 
-    public:
+	public:
         explicit QZXingFilterRunnable(QZXingFilter * filter);
         virtual ~QZXingFilterRunnable();
         /// This method is called whenever we get a new frame. It runs in the UI thread.
         QVideoFrame run(QVideoFrame * input, const QVideoSurfaceFormat &surfaceFormat, RunFlags flags);
         void processVideoFrameProbed(SimpleVideoFrame & videoFrame, const QRect& captureRect);
 
-    private:
+private:
         QString decode(const QImage &image);
 
     private:
-        QZXingFilter * filter;
+		QZXingFilter * filter;
+
 };
+
+
 
 #endif // QZXingFilter_H

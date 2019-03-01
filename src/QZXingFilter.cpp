@@ -28,7 +28,7 @@ namespace {
 
 QZXingFilter::QZXingFilter(QObject *parent)
     : QAbstractVideoFilter(parent)
-    , decoding(false)
+	, decoding(false), active_(true)
 {
     /// Connecting signals to handlers that will send signals to QML
     connect(&decoder, &QZXing::decodingStarted,
@@ -61,7 +61,35 @@ void QZXingFilter::handleDecodingFinished(bool succeeded)
 
 QVideoFilterRunnable * QZXingFilter::createFilterRunnable()
 {
-    return new QZXingFilterRunnable(this);
+	return new QZXingFilterRunnable(this);
+}
+
+bool QZXingFilter::active() const
+{
+	return active_;
+}
+
+void QZXingFilter::setActive(bool active)
+{
+	if (active_ != active)
+	{
+		active_ = active;
+		emit activeChanged(active_);
+	}
+}
+
+QString QZXingFilter::imagePath() const
+{
+	return imagePath_;
+}
+
+void QZXingFilter::setImagePath(QString imagePath)
+{
+//	if (imagePath_ != imagePath)
+//	{
+		imagePath_ = imagePath;
+		emit imagePathChanged(imagePath);
+//	}
 }
 
 ///
@@ -86,7 +114,13 @@ QVideoFrame QZXingFilterRunnable::run(QVideoFrame * input, const QVideoSurfaceFo
 
     /// We dont want to decode every single frame we get, as this would be very costly
     /// These checks are attempt on having only 1 frame being processed at a time.
-    if(!input || !input->isValid())
+
+	if(!filter->active())
+	{
+		return * input;
+	}
+
+	if(!input || !input->isValid())
     {
         //qDebug() << "[QZXingFilterRunnable] Invalid Input ";
         return * input;
@@ -329,7 +363,24 @@ void QZXingFilterRunnable::processVideoFrameProbed(SimpleVideoFrame & videoFrame
 
     //QZXingImageProvider::getInstance()->storeImage(image);
 
-    decode(*image_ptr);
+	QString ss = decode(*image_ptr);
+
+	if (ss != "")
+	{
+		QString path = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation) + "/test" + ss + ".png";
+		qDebug() << image_ptr->save(path) << "QQQ" << path << filter->decoder.foundedFormat() << ss;
+		filter->setImagePath(path);
+
+		emit filter->tagRecognized(ss, path, filter->decoder.foundedFormat(), filter->decoder.charSet());
+	}
+	else
+	{
+		//const QString path = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation) + "/test_.png";
+		//qDebug() << image_ptr->save(path) << "QQQ";
+		//qDebug() << "sdf";
+	}
+
+
 
     delete image_ptr;
 }
