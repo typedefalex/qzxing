@@ -5,6 +5,8 @@
 #include <QtConcurrent/QtConcurrent>
 //#include "QZXingImageProvider.h"
 
+#include "settings.h"
+
 namespace {
     uchar gray(uchar r, uchar g, uchar b)
     {
@@ -367,7 +369,7 @@ void QZXingFilterRunnable::processVideoFrameProbed(SimpleVideoFrame & videoFrame
 
 	if (ss != "")
 	{
-		QString path = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation) + "/test" + ss + ".png";
+		QString path = Settings::instance()->pathPictures() + "/test" + ".png";
 		qDebug() << image_ptr->save(path) << "QQQ" << path << filter->decoder.foundedFormat() << ss;
 		filter->setImagePath(path);
 
