@@ -370,6 +370,7 @@ void QZXingFilterRunnable::processVideoFrameProbed(SimpleVideoFrame & videoFrame
 	if (ss != "")
 	{
 		QString path = Settings::instance()->pathPictures() + "/test" + ".png";
+		image_ptr->save(path);
 		filter->setImagePath(path);
 
 		emit filter->tagRecognized(ss, path, filter->decoder.foundedFormat(), filter->decoder.charSet());
